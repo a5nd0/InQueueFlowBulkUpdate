@@ -1,0 +1,49 @@
+// Set the necessary variables for updating the queue
+var queueId = "733a9fcd-e801-4de5-a0aa-3e8ee42db86e";
+var queueName = "Test Queue (Max)";
+var newQueueFlow = {
+  "id": "49361c8e-d394-45b3-b6c7-1c91ec25df74",
+  "name": "Test Virtual Queue (Max)",
+  "selfUri": "/api/v2/flows/49361c8e-d394-45b3-b6c7-1c91ec25df74"
+};
+
+// Create the session to interface with the API
+var routingApi = new platformClient.RoutingApi();
+
+console.log("Getting the " + queueName + " queue");
+var opts = { 
+  'pageSize': 25,
+  'pageNumber': 1,
+  'sortBy': "name",
+  'name': queueName,
+  'id': [],
+  'divisionId': []
+};
+
+// Find the queue by name
+routingApi.getRoutingQueues(opts)
+  .then((data) => {
+    console.log(`getRoutingQueues success! data: ${JSON.stringify(data, null, 2)}`);
+
+    if ( data.entities !== undefined && data.entities.length === 1 ) {
+      console.log("The ID for the " + queueName + " queue is: " + data.entities[0].id);
+      
+      // Update the queue's queueFlow
+      var queue = data.entities[0];
+      queue.queueFlow = newQueueFlow;
+
+      // Update the queue using the API
+      routingApi.putRoutingQueue(queueId, queue)
+        .then((data) => {
+          console.log(`patchRoutingQueue success! data: ${JSON.stringify(data, null, 2)}`);
+        })
+        .catch((err) => {
+          console.log('There was a failure calling patchRoutingQueue');
+          console.error(err);
+        });
+    }
+  })
+  .catch((err) => {
+    console.log('There was a failure calling getRoutingQueues');
+    console.error(err);
+  });
