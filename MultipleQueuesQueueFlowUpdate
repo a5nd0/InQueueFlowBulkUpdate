@@ -1,0 +1,59 @@
+// Set the necessary variables for updating the queues
+var queueNames = ["TestQueue1", "TestQueue2"];
+var newQueueFlow = {
+  "id": "49361c8e-d394-45b3-b6c7-1c91ec25df74",
+  "name": "Test Virtual Queue (Max)",
+  "selfUri": "/api/v2/flows/49361c8e-d394-45b3-b6c7-1c91ec25df74"
+};
+
+// Create the session to interface with the API
+var routingApi = new platformClient.RoutingApi();
+
+console.log("Getting the " + queueNames + " queues");
+
+var queuePromises = queueNames.map(function(queueName) {
+  var opts = { 
+    'pageSize': 25,
+    'pageNumber': 1,
+    'sortBy': "name",
+    'name': queueName,
+    'id': [],
+    'divisionId': []
+  };
+
+  return routingApi.getRoutingQueues(opts)
+    .then((data) => {
+      console.log(`getRoutingQueues success! data: ${JSON.stringify(data, null, 2)}`);
+
+      if ( data.entities !== undefined && data.entities.length === 1 ) {
+        console.log("The ID for the " + queueName + " queue is: " + data.entities[0].id);
+        
+        // Update the queue's queueFlow
+        var queue = data.entities[0];
+        queue.queueFlow = newQueueFlow;
+
+        // Update the queue using the API
+        routingApi.putRoutingQueue(queue.id, queue)
+          .then((data) => {
+            console.log(`putRoutingQueue success! data: ${JSON.stringify(data, null, 2)}`);
+          })
+          .catch((err) => {
+            console.log('There was a failure calling putRoutingQueue');
+            console.error(err);
+          });
+      }
+    })
+    .catch((err) => {
+      console.log('There was a failure calling getRoutingQueues');
+      console.error(err);
+    });
+});
+
+Promise.all(queuePromises)
+  .then(() => {
+    console.log("All queues have been updated successfully!");
+  })
+  .catch((err) => {
+    console.log('There was a failure updating the queues');
+    console.error(err);
+  });
